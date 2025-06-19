@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini ERP - Gudang & Inventaris</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f8; }
+    header { background: #0077cc; color: white; padding: 1rem; text-align: center; }
+    .container { padding: 2rem; max-width: 900px; margin: auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h2 { color: #0077cc; margin-top: 2rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.75rem; border: 1px solid #ddd; text-align: left; }
+    th { background: #eef3f7; }
+    .low-stock { color: red; font-weight: bold; }
+    .btn { padding: 0.5rem 1rem; margin-top: 1rem; background: #0077cc; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    .btn:hover { background: #005fa3; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mini ERP - Aplikasi Manajemen Gudang & Inventaris</h1>
+  </header>
+  <div class="container">
+
+    <h2>Ringkasan Stok</h2>
+    <p>Total Barang: <strong>120 item</strong></p>
+    <p>Stok Rendah: <span class="low-stock">2 item</span></p>
+
+    <h2>Data Barang</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nama Barang</th>
+          <th>Kategori</th>
+          <th>Stok Saat Ini</th>
+          <th>Minimum Stok</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Beras</td>
+          <td>Sembako</td>
+          <td>15</td>
+          <td>10</td>
+          <td>Aman</td>
+        </tr>
+        <tr>
+          <td>Gula Pasir</td>
+          <td>Sembako</td>
+          <td>5</td>
+          <td>10</td>
+          <td class="low-stock">Stok Rendah</td>
+        </tr>
+        <tr>
+          <td>Minyak Goreng</td>
+          <td>Sembako</td>
+          <td>8</td>
+          <td>10</td>
+          <td class="low-stock">Stok Rendah</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Laporan Mingguan</h2>
+    <button class="btn">Export PDF</button>
+
+  </div>
+</body>
+</html>
