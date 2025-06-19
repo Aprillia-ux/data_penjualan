@@ -1,149 +1,157 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dashboard Penjualan & Stok Barang</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini ERP - Gudang & Inventaris</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f8; }
     header { background: #0077cc; color: white; padding: 1rem; text-align: center; }
-    .container { max-width: 1000px; margin: 2rem auto; background: #fff; padding: 2rem; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    h2 { border-bottom: 1px solid #ccc; padding-bottom: 0.5rem; margin-top: 2rem; }
+    .container { padding: 2rem; max-width: 900px; margin: auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h2 { color: #0077cc; margin-top: 2rem; }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.75rem; text-align: left; }
-    th { background: #eaeaea; }
-    input, button { padding: 0.5rem; margin-top: 0.5rem; width: 100%; box-sizing: border-box; }
-    .btn { background-color: #0077cc; color: white; border: none; cursor: pointer; margin-top: 1rem; }
-    .btn:hover { background-color: #005fa3; }
-    #struk { white-space: pre; background: #f4f4f4; padding: 1rem; border: 1px dashed #999; margin-top: 1rem; }
+    th, td { padding: 0.75rem; border: 1px solid #ddd; text-align: left; }
+    th { background: #eef3f7; }
+    .low-stock { color: red; font-weight: bold; }
+    .btn { padding: 0.5rem 1rem; margin-top: 1rem; background: #0077cc; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    .btn:hover { background: #005fa3; }
+    input, select { padding: 0.5rem; margin: 0.5rem 0; width: 100%; }
+    canvas { margin-top: 2rem; }
+    .actions button { margin-right: 5px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Dashboard Penjualan, Pemasukan, dan Stok Barang</h1>
+    <h1>Mini ERP - Aplikasi Manajemen Gudang & Inventaris</h1>
   </header>
-
   <div class="container">
-    <h2>Input Transaksi Penjualan</h2>
-    <input type="text" id="item" placeholder="Nama Barang">
-    <input type="number" id="qty" placeholder="Jumlah Terjual">
-    <input type="number" id="price" placeholder="Harga Satuan">
-    <button class="btn" onclick="tambahPenjualan()">Simpan Penjualan</button>
 
-    <h2>Data Penjualan</h2>
-    <table id="penjualanTable">
-      <thead>
-        <tr><th>Nama Barang</th><th>Jumlah</th><th>Harga Satuan</th><th>Total</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <h2>Input Data Barang</h2>
+    <form id="itemForm">
+      <input type="text" id="nama" placeholder="Nama Barang" required>
+      <input type="text" id="kategori" placeholder="Kategori" required>
+      <input type="number" id="stok" placeholder="Stok Saat Ini" required>
+      <input type="number" id="minStok" placeholder="Minimum Stok" required>
+      <button type="submit" class="btn">Tambah Barang</button>
+    </form>
 
-    <h2>Stok Barang</h2>
-    <table id="stokTable">
-      <thead>
-        <tr><th>Nama Barang</th><th>Stok Tersisa</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <h2>Data Barang</h2>
+    <div id="tableContainer">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>Nama Barang</th>
+            <th>Kategori</th>
+            <th>Stok Saat Ini</th>
+            <th>Minimum Stok</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Beras</td>
+            <td>Sembako</td>
+            <td>15</td>
+            <td>10</td>
+            <td>Aman</td>
+            <td class="actions">
+              <button onclick="editRow(this)">Edit</button>
+              <button onclick="deleteRow(this)">Hapus</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <h2>Total Pemasukan</h2>
-    <div id="totalPemasukan">Rp 0</div>
+    <h2>Grafik Stok Barang</h2>
+    <canvas id="stokChart" width="600" height="300"></canvas>
 
-    <h2>Struk Transaksi</h2>
-    <div id="struk">(Struk akan muncul di sini)</div>
-    <button class="btn" onclick="cetakStruk()">Cetak Struk</button>
+    <button class="btn" onclick="exportPDF()">Export PDF</button>
 
-    <h2>Grafik Penjualan</h2>
-    <canvas id="salesChart" height="100"></canvas>
-  </div>
-
-  <script>
-    let dataPenjualan = [];
-    let dataStok = { "Sabun": 100, "Shampoo": 50, "Sikat Gigi": 70 };
-    let total = 0;
-    let chart;
-
-    function formatRupiah(num) {
-      return 'Rp ' + num.toLocaleString('id-ID');
-    }
-
-    function tambahPenjualan() {
-      const item = document.getElementById("item").value;
-      const qty = parseInt(document.getElementById("qty").value);
-      const price = parseInt(document.getElementById("price").value);
-
-      if (!item || isNaN(qty) || isNaN(price)) return alert("Lengkapi semua input!");
-
-      const totalItem = qty * price;
-      dataPenjualan.push({ item, qty, price, totalItem });
-      total += totalItem;
-
-      if (dataStok[item]) {
-        dataStok[item] -= qty;
-      } else {
-        dataStok[item] = 0 - qty;
-      }
-
-      tampilkanPenjualan();
-      tampilkanStok();
-      updateChart();
-      document.getElementById("totalPemasukan").innerText = formatRupiah(total);
-
-      document.getElementById("item").value = "";
-      document.getElementById("qty").value = "";
-      document.getElementById("price").value = "";
-    }
-
-    function tampilkanPenjualan() {
-      const tbody = document.querySelector("#penjualanTable tbody");
-      tbody.innerHTML = "";
-      dataPenjualan.forEach(p => {
-        tbody.innerHTML += `<tr><td>${p.item}</td><td>${p.qty}</td><td>${formatRupiah(p.price)}</td><td>${formatRupiah(p.totalItem)}</td></tr>`;
-      });
-    }
-
-    function tampilkanStok() {
-      const tbody = document.querySelector("#stokTable tbody");
-      tbody.innerHTML = "";
-      for (const [item, stok] of Object.entries(dataStok)) {
-        tbody.innerHTML += `<tr><td>${item}</td><td>${stok}</td></tr>`;
-      }
-    }
-
-    function cetakStruk() {
-      let isiStruk = "===== STRUK PENJUALAN =====\n";
-      dataPenjualan.forEach(p => {
-        isiStruk += `- ${p.qty} x ${p.item} @${formatRupiah(p.price)} = ${formatRupiah(p.totalItem)}\n`;
-      });
-      isiStruk += `---------------------------\nTotal: ${formatRupiah(total)}\nTanggal: ${new Date().toLocaleString()}`;
-      document.getElementById("struk").textContent = isiStruk;
-    }
-
-    function updateChart() {
-      const ctx = document.getElementById('salesChart').getContext('2d');
-      const labels = dataPenjualan.map(p => p.item);
-      const data = dataPenjualan.map(p => p.totalItem);
-
-      if (chart) chart.destroy();
-      chart = new Chart(ctx, {
+    <script>
+      const ctx = document.getElementById('stokChart').getContext('2d');
+      const stokChart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: labels,
+          labels: ['Beras'],
           datasets: [{
-            label: 'Total Penjualan per Barang',
-            data: data,
-            backgroundColor: 'rgba(0, 119, 204, 0.5)'
+            label: 'Jumlah Stok',
+            data: [15],
+            backgroundColor: ['#0077cc']
           }]
         },
         options: {
+          responsive: true,
           scales: {
             y: { beginAtZero: true }
           }
         }
       });
-    }
 
-    tampilkanStok();
-  </script>
+      document.getElementById('itemForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nama = document.getElementById('nama').value;
+        const kategori = document.getElementById('kategori').value;
+        const stok = parseInt(document.getElementById('stok').value);
+        const minStok = parseInt(document.getElementById('minStok').value);
+        const status = stok < minStok ? 'Stok Rendah' : 'Aman';
+
+        const table = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+        newRow.innerHTML = `
+          <td>${nama}</td>
+          <td>${kategori}</td>
+          <td>${stok}</td>
+          <td>${minStok}</td>
+          <td class='${status === 'Stok Rendah' ? 'low-stock' : ''}'>${status}</td>
+          <td class='actions'>
+            <button onclick="editRow(this)">Edit</button>
+            <button onclick="deleteRow(this)">Hapus</button>
+          </td>
+        `;
+
+        // Tambah ke grafik
+        stokChart.data.labels.push(nama);
+        stokChart.data.datasets[0].data.push(stok);
+        stokChart.update();
+
+        this.reset();
+      });
+
+      function deleteRow(button) {
+        const row = button.parentNode.parentNode;
+        const namaBarang = row.cells[0].textContent;
+
+        // Hapus dari grafik juga
+        const index = stokChart.data.labels.indexOf(namaBarang);
+        if (index > -1) {
+          stokChart.data.labels.splice(index, 1);
+          stokChart.data.datasets[0].data.splice(index, 1);
+          stokChart.update();
+        }
+
+        row.remove();
+      }
+
+      function editRow(button) {
+        const row = button.parentNode.parentNode;
+        document.getElementById('nama').value = row.cells[0].textContent;
+        document.getElementById('kategori').value = row.cells[1].textContent;
+        document.getElementById('stok').value = row.cells[2].textContent;
+        document.getElementById('minStok').value = row.cells[3].textContent;
+        deleteRow(button);
+      }
+
+      function exportPDF() {
+        const element = document.getElementById('tableContainer');
+        html2pdf().from(element).save('laporan_stok.pdf');
+      }
+    </script>
+
+  </div>
 </body>
 </html>
